@@ -4,54 +4,50 @@ import requests
 
 from data.data import API_ENDPOINTS, EXPECTED_RESPONSES
 
-
 @allure.feature('Удаление курьера')
 @allure.story('Негативные сценарии')
 class TestDeleteCourierNegative:
 
     @pytest.mark.negative
-    @allure.title("Удаление курьера без указания id")
-    def test_delete_courier_without_id(self):
+    @allure.title("Попытка удаления курьера без указания id - проверка кода ответа")
+    def test_delete_courier_without_id_status_code(self):
         with allure.step('Отправка запроса на удаление курьера без id'):
             response = requests.delete(API_ENDPOINTS["delete_created_courier"].format(id=""))
-
-        with allure.step('Проверка ответа'):
-            assert ((response.status_code == EXPECTED_RESPONSES["delete_courier_missing_data_code"] and
-                     response.json()["message"] == EXPECTED_RESPONSES["delete_courier_missing_data_message"]) or
-                    (response.status_code == EXPECTED_RESPONSES["delete_courier_not_found_code"])), \
-                f"Неожиданный ответ при удалении курьера без id. Получено: код {response.status_code} и сообщение {response.json()['message']}"
-
-        if (response.status_code != EXPECTED_RESPONSES["delete_courier_missing_data_code"] or
-                response.json()["message"] != EXPECTED_RESPONSES["delete_courier_missing_data_message"]):
-            allure.attach(
-                "Предупреждение",
-                f"Ответ сервера не соответствует ожидаемому. " +
-                f"Ожидалось: код {EXPECTED_RESPONSES['delete_courier_missing_data_code']}, " +
-                f"сообщение '{EXPECTED_RESPONSES['delete_courier_missing_data_message']}'. " +
-                f"Получено: код {response.status_code}, сообщение '{response.json()['message']}'.",
-                allure.attachment_type.TEXT
-            )
+        
+        with allure.step('Проверка кода ответа 400'):
+            assert response.status_code == EXPECTED_RESPONSES["delete_courier_missing_data_code"], \
+                f"Ожидался код 400, получен {response.status_code}"
 
     @pytest.mark.negative
-    @allure.title("Удаление несуществующего курьера")
-    def test_delete_nonexistent_courier(self):
+    @allure.title("Попытка удаления курьера без указания id - проверка сообщения")
+    def test_delete_courier_without_id_message(self):
+        with allure.step('Отправка запроса на удаление курьера без id'):
+            response = requests.delete(API_ENDPOINTS["delete_created_courier"].format(id=""))
+        
+        with allure.step('Проверка сообщения об ошибке'):
+            assert response.json()["message"] == EXPECTED_RESPONSES["delete_courier_missing_data_message"], \
+                f"Неверное сообщение об ошибке: {response.json()['message']}"
+
+    @pytest.mark.negative
+    @allure.title("Попытка удаления несуществующего курьера - проверка кода ответа")
+    def test_delete_nonexistent_courier_status_code(self):
         nonexistent_id = 999999
-
-        with allure.step(f'Отправка запроса на удаление несуществующего курьера с id {nonexistent_id}'):
+        
+        with allure.step(f'Отправка запроса на удаление курьера с id {nonexistent_id}'):
             response = requests.delete(API_ENDPOINTS["delete_created_courier"].format(id=nonexistent_id))
+        
+        with allure.step('Проверка кода ответа 404'):
+            assert response.status_code == EXPECTED_RESPONSES["delete_courier_not_found_code"], \
+                f"Ожидался код 404, получен {response.status_code}"
 
-        with allure.step('Проверка ответа'):
-            assert (response.status_code == EXPECTED_RESPONSES["delete_courier_not_found_code"] and
-                    response.json()["message"] == EXPECTED_RESPONSES["delete_courier_not_found_message"]), \
-                f"Неожиданный ответ при удалении несуществующего курьера. Получено: код {response.status_code} и сообщение {response.json()['message']}"
-
-        if (response.status_code != EXPECTED_RESPONSES["delete_courier_not_found_code"] or
-                response.json()["message"] != EXPECTED_RESPONSES["delete_courier_not_found_message"]):
-            allure.attach(
-                "Предупреждение",
-                f"Ответ сервера не соответствует ожидаемому. " +
-                f"Ожидалось: код {EXPECTED_RESPONSES['delete_courier_not_found_code']}, " +
-                f"сообщение '{EXPECTED_RESPONSES['delete_courier_not_found_message']}'. " +
-                f"Получено: код {response.status_code}, сообщение '{response.json()['message']}'.",
-                allure.attachment_type.TEXT
-            )
+    @pytest.mark.negative
+    @allure.title("Попытка удаления несуществующего курьера - проверка сообщения")
+    def test_delete_nonexistent_courier_message(self):
+        nonexistent_id = 999999
+        
+        with allure.step(f'Отправка запроса на удаление курьера с id {nonexistent_id}'):
+            response = requests.delete(API_ENDPOINTS["delete_created_courier"].format(id=nonexistent_id))
+        
+        with allure.step('Проверка сообщения об ошибке'):
+            assert response.json()["message"] == EXPECTED_RESPONSES["delete_courier_not_found_message"], \
+                f"Неверное сообщение об ошибке: {response.json()['message']}"

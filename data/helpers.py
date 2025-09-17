@@ -1,5 +1,4 @@
 from itertools import chain, combinations
-
 import allure
 import requests
 
@@ -7,6 +6,7 @@ from data.data import API_ENDPOINTS, EXPECTED_RESPONSES, ORDER_STATUSES
 from data.test_data_generator import generate_courier_data, generate_order_data
 
 
+@allure.step("Удаление созданного курьера")
 def delete_created_courier(courier_data):
     login_response = requests.post(API_ENDPOINTS["login_courier"], json=courier_data)
     if login_response.status_code == EXPECTED_RESPONSES["create_courier_success_code"]:
@@ -17,6 +17,7 @@ def delete_created_courier(courier_data):
 
 class ValidationHelper:
     @staticmethod
+    @allure.step("Валидация ответа заказа")
     def validate_order_response(api_response, valid_status_codes, expected_content):
         if api_response.status_code not in valid_status_codes:
             return False
@@ -37,6 +38,7 @@ class ValidationHelper:
         return False
 
     @staticmethod
+    @allure.step("Валидация ответа API")
     def validate_response(api_response, valid_status_codes, expected_contents, warning_message=None):
         if api_response.status_code == 500:
             allure.attach(api_response.text, "Server Error 500", allure.attachment_type.TEXT)
@@ -64,6 +66,7 @@ class ValidationHelper:
         return is_valid
 
     @staticmethod
+    @allure.step("Валидация заказа с заказом")
     def validate_order_with_order(api_response, expected_valid_status_code):
         if api_response.status_code != expected_valid_status_code:
             allure.attach(api_response.text,
@@ -85,6 +88,7 @@ class CourierHelper:
     created_courier_ids = []
 
     @classmethod
+    @allure.step("Создание курьера")
     def create_courier(cls, max_attempts=3):
         for attempt in range(max_attempts):
             create_courier_data = generate_courier_data()
@@ -97,6 +101,7 @@ class CourierHelper:
             f"Не удалось создать тестового курьера после {max_attempts} попыток. Код ответа: {response.status_code}, Ответ: {response.text}")
 
     @classmethod
+    @allure.step("Вход курьера")
     def login_courier(cls, courier_login, courier_password):
         response = requests.post(API_ENDPOINTS["login_courier"],
                                  json={"login": courier_login, "password": courier_password})
@@ -107,6 +112,7 @@ class CourierHelper:
                 f"Не удалось залогинить курьера. Код ответа: {response.status_code}, Ответ: {response.text}")
 
     @classmethod
+    @allure.step("Удаление курьера")
     def delete_courier(cls, courier_id_to_delete):
         response = requests.delete(API_ENDPOINTS["delete_created_courier"].format(id=courier_id_to_delete))
         if response.status_code != 200:
@@ -119,11 +125,13 @@ class OrderHelper:
         self.order_id = None
 
     @staticmethod
+    @allure.step("Получение powerset")
     def powerset(iterable):
         s = list(iterable)
         return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 
     @staticmethod
+    @allure.step("Создание заказа")
     def create_order(order_data):
         response = requests.post(f"{API_ENDPOINTS['create_order']}", json=order_data)
         if response.status_code == 201:
@@ -132,12 +140,14 @@ class OrderHelper:
             raise Exception(f"Не удалось создать заказ. Код ответа: {response.status_code}")
 
     @staticmethod
+    @allure.step("Принятие заказа")
     def accept_order(order_id, courier_id):
         url = f"{API_ENDPOINTS['accept_order']}/{order_id}?courierId={courier_id}"
         response = requests.put(url)
         return response
 
     @staticmethod
+    @allure.step("Завершение заказа")
     def complete_order(order_id):
         url = f"{API_ENDPOINTS['finish_order']}/{order_id}"
         response = requests.put(url)
@@ -147,7 +157,7 @@ class OrderHelper:
             raise Exception(f"Не удалось завершить заказ. Код ответа: {response.status_code}")
 
     @staticmethod
-    # эта ручка просто не работает и при любом валидном запросе возвращает 400
+    @allure.step("Отмена заказа")
     def cancel_order(track):
         data = {"track": track}
         url = f"{API_ENDPOINTS['cancel_order']}"
@@ -158,23 +168,27 @@ class OrderHelper:
             raise Exception(f"Не удалось отменить заказ. Код ответа: {response.status_code}, ответ: {response.json()}")
 
     @staticmethod
+    @allure.step("Получение заказа по треку")
     def get_order_by_track(track):
         response = requests.get(f"{API_ENDPOINTS['track_order']}?t={track}")
         return response
 
     @staticmethod
+    @allure.step("Получение ответа заказа по треку")
     def get_order_response_by_track(track):
         url = f"{API_ENDPOINTS['track_order']}?t={track}"
         response = requests.get(url)
         return response
 
     @staticmethod
+    @allure.step("Генерация заказа без поля")
     def generate_order_without_field(field):
         order_data = generate_order_data()
         del order_data[field]
         return order_data
 
     @staticmethod
+    @allure.step("Генерация заказа с пустым полем")
     def generate_order_with_empty_field(field):
         order_data = generate_order_data()
         order_data[field] = ""
@@ -183,6 +197,7 @@ class OrderHelper:
 
 class OrderParamsHelper:
     @staticmethod
+    @allure.step("Получение параметров заказов курьера")
     def get_courier_orders_params(setup_orders, status):
         courier_id, _ = setup_orders
         params = {"courierId": courier_id}
@@ -191,6 +206,7 @@ class OrderParamsHelper:
         return params
 
     @staticmethod
+    @allure.step("Получение параметров заказов станции")
     def get_station_orders_params(setup_orders):
         courier_id, orders = setup_orders
         track = orders[0]["track"]
@@ -200,6 +216,7 @@ class OrderParamsHelper:
         return {"nearestStation": station}
 
     @staticmethod
+    @allure.step("Получение параметров заказов курьера и станции")
     def get_courier_station_orders_params(setup_orders):
         courier_id, orders = setup_orders
         track = orders[0]["track"]
@@ -209,6 +226,7 @@ class OrderParamsHelper:
         return {"nearestStation": station, "courierId": courier_id}
 
     @staticmethod
+    @allure.step("Проверка ответа")
     def check_response(response, expected_code, expected_response):
         if response.status_code != expected_code:
             return False
@@ -224,5 +242,6 @@ class OrderParamsHelper:
         return True
 
     @staticmethod
+    @allure.step("Получение параметров лимита и страницы заказов")
     def get_limit_page_orders_params():
         return {"limit": 10, "page": 1}
