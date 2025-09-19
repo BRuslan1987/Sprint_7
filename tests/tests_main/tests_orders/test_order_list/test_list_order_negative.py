@@ -5,7 +5,6 @@ import requests
 from data import API_ENDPOINTS, EXPECTED_RESPONSES
 from data.helpers import OrderParamsHelper
 
-
 @allure.feature('Получение списка заказов')
 @allure.story('Позитивные сценарии')
 class TestListOrdersPositive:
@@ -17,15 +16,16 @@ class TestListOrdersPositive:
             params = OrderParamsHelper.get_station_orders_params(setup_orders_for_list_tests)
             response = requests.get(API_ENDPOINTS["list_orders"], params=params)
 
-        with allure.step('Проверка ответа'):
+        with allure.step('Проверка статус-кода'):
+            assert response.status_code == EXPECTED_RESPONSES["get_orders_list_success_code"], \
+                f"Ожидался код {EXPECTED_RESPONSES['get_orders_list_success_code']}, получен {response.status_code}"
+
+        with allure.step('Проверка структуры ответа'):
             assert OrderParamsHelper.check_response(
                 response,
                 EXPECTED_RESPONSES["get_orders_list_success_code"],
                 EXPECTED_RESPONSES["get_orders_list_success_response"]
-            ), f"Неожиданный ответ при получении заказов с лимитом и номером страницы. Код ответа: {response.status_code}, ответ: {response.json()}"
-
-        if response.status_code == EXPECTED_RESPONSES["get_orders_list_bad_request_code"]:
-            allure.attach("Сервер вернул ошибку 500", "Предупреждение", allure.attachment_type.TEXT)
+            ), "Неверная структура ответа"
 
     @pytest.mark.positive
     @allure.title("Получение заказов с ID курьера и станцией")
@@ -34,16 +34,16 @@ class TestListOrdersPositive:
             params = OrderParamsHelper.get_courier_station_orders_params(setup_orders_for_list_tests)
             response = requests.get(API_ENDPOINTS["list_orders"], params=params)
 
-        with allure.step('Проверка ответа'):
-            assert (response.status_code == EXPECTED_RESPONSES["get_orders_list_success_code"] and
-                    OrderParamsHelper.check_response(response,
-                                                     EXPECTED_RESPONSES["get_orders_list_success_code"],
-                                                     EXPECTED_RESPONSES["get_orders_list_success_response"])) or \
-                   response.status_code == 500, \
-                f"Неожиданный ответ при получении заказов с ID курьера и станцией. Код ответа: {response.status_code}, ответ: {response.json()}"
+        with allure.step('Проверка статус-кода'):
+            assert response.status_code == EXPECTED_RESPONSES["get_orders_list_success_code"], \
+                f"Ожидался код {EXPECTED_RESPONSES['get_orders_list_success_code']}, получен {response.status_code}"
 
-        if response.status_code == 500:
-            allure.attach("Сервер вернул ошибку 500", "Предупреждение", allure.attachment_type.TEXT)
+        with allure.step('Проверка структуры ответа'):
+            assert OrderParamsHelper.check_response(
+                response,
+                EXPECTED_RESPONSES["get_orders_list_success_code"],
+                EXPECTED_RESPONSES["get_orders_list_success_response"]
+            ), "Неверная структура ответа"
 
     @pytest.mark.positive
     @allure.title("Получение заказов с лимитом и номером страницы")
@@ -52,9 +52,13 @@ class TestListOrdersPositive:
             params = OrderParamsHelper.get_limit_page_orders_params()
             response = requests.get(API_ENDPOINTS["list_orders"], params=params)
 
-        with allure.step('Проверка ответа'):
+        with allure.step('Проверка статус-кода'):
+            assert response.status_code == EXPECTED_RESPONSES["get_orders_list_success_code"], \
+                f"Ожидался код {EXPECTED_RESPONSES['get_orders_list_success_code']}, получен {response.status_code}"
+
+        with allure.step('Проверка структуры ответа'):
             assert OrderParamsHelper.check_response(
                 response,
                 EXPECTED_RESPONSES["get_orders_list_success_code"],
                 EXPECTED_RESPONSES["get_orders_list_success_response"]
-            ), f"Неожиданный ответ при получении заказов с лимитом и номером страницы. Код ответа: {response.status_code}, ответ: {response.json()}"
+            ), "Неверная структура ответа"

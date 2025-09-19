@@ -2,8 +2,7 @@ import allure
 import pytest
 
 from data.data import EXPECTED_RESPONSES
-from data.helpers import OrderHelper, ValidationHelper
-
+from data.helpers import OrderHelper
 
 @allure.feature('Принятие заказа')
 @allure.story('Негативные сценарии')
@@ -18,12 +17,11 @@ class TestAcceptOrderNegative:
         with allure.step('Отправка запроса на принятие несуществующего заказа'):
             response = OrderHelper.accept_order(non_existent_order_id, courier_id)
 
-        with allure.step('Проверка ответа'):
-            assert ValidationHelper.validate_response(
-                response,
-                [EXPECTED_RESPONSES["accept_order_not_found_order_code"]],
-                EXPECTED_RESPONSES["accept_order_not_found_order_message"]
-            ), f"Неожиданный ответ при попытке принять несуществующий заказ. Код: {response}"
+        with allure.step('Проверка кода ответа и сообщения'):
+            assert response.status_code == EXPECTED_RESPONSES["accept_order_not_found_order_code"], \
+                f"Ожидался код {EXPECTED_RESPONSES['accept_order_not_found_order_code']}, получен {response.status_code}"
+            assert response.json()["message"] == EXPECTED_RESPONSES["accept_order_not_found_order_message"], \
+                f"Неверное сообщение: {response.json()['message']}"
 
     @pytest.mark.negative
     @allure.title("Попытка принять заказ с несуществующим id курьера")
@@ -34,27 +32,26 @@ class TestAcceptOrderNegative:
         with allure.step('Отправка запроса на принятие заказа несуществующим курьером'):
             response = OrderHelper.accept_order(order_id, non_existent_courier_id)
 
-        with allure.step('Проверка ответа'):
-            assert ValidationHelper.validate_order_response(
-                response,
-                [EXPECTED_RESPONSES["accept_order_not_found_courier_code"]],
-                EXPECTED_RESPONSES["accept_order_not_found_courier_message"]
-            ), f"Неожиданный ответ при попытке принять заказ несуществующим курьером. Код: {response.status_code}, Тело: {response.json()}"
+        with allure.step('Проверка кода ответа и сообщения'):
+            assert response.status_code == EXPECTED_RESPONSES["accept_order_not_found_courier_code"], \
+                f"Ожидался код {EXPECTED_RESPONSES['accept_order_not_found_courier_code']}, получен {response.status_code}"
+            assert response.json()["message"] == EXPECTED_RESPONSES["accept_order_not_found_courier_message"], \
+                f"Неверное сообщение: {response.json()['message']}"
 
     @pytest.mark.negative
     @allure.title("Попытка принять уже принятый заказ")
     def test_accept_already_accepted_order(self, order_and_courier_setup):
         order_id, courier_id = order_and_courier_setup
 
-        with allure.step('Принятие заказа в первый раз'):
-            OrderHelper.accept_order(order_id, courier_id)
+        with allure.step('Первоначальное принятие заказа'):
+            first_response = OrderHelper.accept_order(order_id, courier_id)
+            assert first_response.status_code == 200, "Не удалось принять заказ изначально"
 
-        with allure.step('Попытка принять уже принятый заказ'):
+        with allure.step('Повторная попытка принятия заказа'):
             response = OrderHelper.accept_order(order_id, courier_id)
 
-        with allure.step('Проверка ответа'):
-            assert ValidationHelper.validate_order_response(
-                response,
-                [EXPECTED_RESPONSES["accept_order_conflict_code"]],
-                EXPECTED_RESPONSES["accept_order_conflict_message"]
-            ), f"Неожиданный ответ при попытке принять уже принятый заказ. Код: {response.status_code}, Тело: {response.json()}"
+        with allure.step('Проверка кода ответа и сообщения'):
+            assert response.status_code == EXPECTED_RESPONSES["accept_order_conflict_code"], \
+                f"Ожидался код {EXPECTED_RESPONSES['accept_order_conflict_code']}, получен {response.status_code}"
+            assert response.json()["message"] == EXPECTED_RESPONSES["accept_order_conflict_message"], \
+                f"Неверное сообщение: {response.json()['message']}"
