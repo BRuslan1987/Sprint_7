@@ -1,10 +1,20 @@
 from itertools import chain, combinations
+import time
 import allure
 import requests
 
 from data.data import API_ENDPOINTS, EXPECTED_RESPONSES, ORDER_STATUSES
 from data.test_data_generator import generate_courier_data, generate_order_data
 
+# Функция ожидания выполнения условия
+def wait_until_condition(condition, timeout=30, interval=1):
+   
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        if condition():
+            return True
+        time.sleep(interval)
+    return False
 
 @allure.step("Удаление созданного курьера")
 def delete_created_courier(courier_data):
@@ -13,7 +23,6 @@ def delete_created_courier(courier_data):
         courier_id = login_response.json().get("id")
         if courier_id:
             requests.delete(API_ENDPOINTS["delete_created_courier"].format(id=courier_id))
-
 
 class ValidationHelper:
     @staticmethod
@@ -83,7 +92,6 @@ class ValidationHelper:
                       allure.attachment_type.TEXT)
         return False
 
-
 class CourierHelper:
     created_courier_ids = []
 
@@ -118,7 +126,6 @@ class CourierHelper:
         if response.status_code != 200:
             raise Exception(
                 f"Не удалось удалить тестового курьера. Код ответа: {response.status_code}, Ответ: {response.text}")
-
 
 class OrderHelper:
     def __init__(self):
@@ -193,7 +200,6 @@ class OrderHelper:
         order_data = generate_order_data()
         order_data[field] = ""
         return order_data
-
 
 class OrderParamsHelper:
     @staticmethod
